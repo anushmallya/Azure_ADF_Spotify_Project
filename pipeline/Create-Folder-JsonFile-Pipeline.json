@@ -32,8 +32,6 @@
 			{
 				"name": "For_Loop_Lookup_Value",
 				"type": "ForEach",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "Monitor_lookup",
@@ -53,8 +51,6 @@
 						{
 							"name": "If Condition1",
 							"type": "IfCondition",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Metadata_Storage",
@@ -207,8 +203,6 @@
 						{
 							"name": "Metadata_Storage",
 							"type": "GetMetadata",
-							"state": "Inactive",
-							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [],
 							"policy": {
 								"timeout": "0.12:00:00",
@@ -271,7 +265,7 @@
 									"referenceName": "pipeline1",
 									"type": "PipelineReference"
 								},
-								"waitOnCompletion": false,
+								"waitOnCompletion": true,
 								"parameters": {
 									"p_schema": {
 										"value": "@item().TABLE_SCHEMA",
@@ -282,7 +276,7 @@
 										"type": "Expression"
 									},
 									"p_column": {
-										"value": "@if(equals(item().TABLE_NAME,'Dates'),'date',if(equals(item().TABLE_NAME,'Stream'),'stream_timestamp','updated_at'))\r\n",
+										"value": "'updated_at'",
 										"type": "Expression"
 									}
 								}
