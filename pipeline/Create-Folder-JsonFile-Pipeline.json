@@ -32,6 +32,8 @@
 			{
 				"name": "For_Loop_Lookup_Value",
 				"type": "ForEach",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "Monitor_lookup",
@@ -51,6 +53,8 @@
 						{
 							"name": "If Condition1",
 							"type": "IfCondition",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [
 								{
 									"activity": "Metadata_Storage",
@@ -203,6 +207,8 @@
 						{
 							"name": "Metadata_Storage",
 							"type": "GetMetadata",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
 							"dependsOn": [],
 							"policy": {
 								"timeout": "0.12:00:00",
@@ -222,6 +228,7 @@
 								],
 								"storeSettings": {
 									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
 									"enablePartitionDiscovery": false
 								},
 								"formatSettings": {
@@ -252,32 +259,32 @@
 					"isSequential": true,
 					"activities": [
 						{
-							"name": "Last_update_Lookup",
-							"type": "Lookup",
+							"name": "Execute Pipeline1",
+							"type": "ExecutePipeline",
 							"dependsOn": [],
 							"policy": {
-								"timeout": "0.12:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
-								"secureOutput": false,
 								"secureInput": false
 							},
 							"userProperties": [],
 							"typeProperties": {
-								"source": {
-									"type": "JsonSource",
-									"storeSettings": {
-										"type": "AzureBlobFSReadSettings",
-										"recursive": true,
-										"enablePartitionDiscovery": false
-									},
-									"formatSettings": {
-										"type": "JsonReadSettings"
-									}
+								"pipeline": {
+									"referenceName": "pipeline1",
+									"type": "PipelineReference"
 								},
-								"dataset": {
-									"referenceName": "last_updatejson_lookup_source",
-									"type": "DatasetReference"
+								"waitOnCompletion": false,
+								"parameters": {
+									"p_schema": {
+										"value": "@item().TABLE_SCHEMA",
+										"type": "Expression"
+									},
+									"p_table": {
+										"value": "@item().TABLE_NAME",
+										"type": "Expression"
+									},
+									"p_column": {
+										"value": "@if(equals(item().TABLE_NAME,'Dates'),'date',if(equals(item().TABLE_NAME,'Stream'),'stream_timestamp','updated_at'))\r\n",
+										"type": "Expression"
+									}
 								}
 							}
 						}
@@ -285,6 +292,11 @@
 				}
 			}
 		],
+		"variables": {
+			"v_current_date": {
+				"type": "String"
+			}
+		},
 		"annotations": []
 	}
 }

@@ -1,0 +1,22 @@
+{
+	"name": "SQL_Data_source",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ADF_SQL_Database_Link",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": {
+				"value": "@dataset().p_schema",
+				"type": "Expression"
+			},
+			"table": {
+				"value": "@dataset().p_table",
+				"type": "Expression"
+			}
+		}
+	}
+}
