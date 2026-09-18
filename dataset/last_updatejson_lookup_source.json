@@ -1,0 +1,37 @@
+{
+	"name": "last_updatejson_lookup_source",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ADF_Storage_Link",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"p_folder_1": {
+				"type": "string"
+			},
+			"p_folder_2": {
+				"type": "string"
+			},
+			"p_file": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().p_file",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@concat(dataset().p_folder_1,'/',dataset().p_folder_2)",
+					"type": "Expression"
+				},
+				"fileSystem": "bronze"
+			}
+		},
+		"schema": {}
+	}
+}

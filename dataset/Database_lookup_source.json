@@ -1,0 +1,12 @@
+{
+	"name": "Database_lookup_source",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ADF_SQL_Database_Link",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": []
+	}
+}

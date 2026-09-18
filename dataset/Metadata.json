@@ -1,0 +1,25 @@
+{
+	"name": "Metadata",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ADF_Storage_Link",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileSystem": "bronze"
+			}
+		},
+		"schema": {
+			"type": "object",
+			"properties": {
+				"last_update": {
+					"type": "string"
+				}
+			}
+		}
+	}
+}

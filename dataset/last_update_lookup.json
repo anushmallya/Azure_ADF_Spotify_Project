@@ -1,0 +1,29 @@
+{
+	"name": "last_update_lookup",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ADF_Storage_Link",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"p_folder_1": {
+				"type": "string"
+			},
+			"p_folder_2": {
+				"type": "string"
+			},
+			"p_file": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileSystem": "bronze"
+			}
+		},
+		"schema": {}
+	}
+}
