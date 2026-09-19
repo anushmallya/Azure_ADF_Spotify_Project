@@ -23,7 +23,7 @@
 						"partitionOption": "None"
 					},
 					"dataset": {
-						"referenceName": "Database_lookup_source",
+						"referenceName": "sql_database_lookup",
 						"type": "DatasetReference"
 					},
 					"firstRowOnly": false
@@ -227,58 +227,6 @@
 								},
 								"formatSettings": {
 									"type": "JsonReadSettings"
-								}
-							}
-						}
-					]
-				}
-			},
-			{
-				"name": "For_loop_lookup_value_table",
-				"type": "ForEach",
-				"dependsOn": [
-					{
-						"activity": "For_Loop_Lookup_Value",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"userProperties": [],
-				"typeProperties": {
-					"items": {
-						"value": "@activity('Monitor_lookup').output.value",
-						"type": "Expression"
-					},
-					"isSequential": true,
-					"activities": [
-						{
-							"name": "Execute Pipeline1",
-							"type": "ExecutePipeline",
-							"dependsOn": [],
-							"policy": {
-								"secureInput": false
-							},
-							"userProperties": [],
-							"typeProperties": {
-								"pipeline": {
-									"referenceName": "pipeline1",
-									"type": "PipelineReference"
-								},
-								"waitOnCompletion": true,
-								"parameters": {
-									"p_schema": {
-										"value": "@item().TABLE_SCHEMA",
-										"type": "Expression"
-									},
-									"p_table": {
-										"value": "@item().TABLE_NAME",
-										"type": "Expression"
-									},
-									"p_column": {
-										"value": "'updated_at'",
-										"type": "Expression"
-									}
 								}
 							}
 						}
