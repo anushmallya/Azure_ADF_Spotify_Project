@@ -232,6 +232,58 @@
 						}
 					]
 				}
+			},
+			{
+				"name": "For_loop_lookup_value_store",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "For_Loop_Lookup_Value",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Monitor_lookup').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Execute Pipeline_to_store_data",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "Store-Data-Folder-Parquet-File",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"p_schema": {
+										"value": "@item().TABLE_SCHEMA",
+										"type": "Expression"
+									},
+									"p_table": {
+										"value": "@item().TABLE_NAME",
+										"type": "Expression"
+									},
+									"p_column": {
+										"value": "@if(\n    equals(item().TABLE_NAME, 'Dates'),\n    'date',\n    if(\n        equals(item().TABLE_NAME, 'Stream'),\n        'stream_timestamp',\n        'updated_at'\n    )\n)",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
 			}
 		],
 		"variables": {

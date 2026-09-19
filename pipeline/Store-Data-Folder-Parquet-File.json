@@ -179,6 +179,150 @@
 						}
 					}
 				]
+			},
+			{
+				"name": "If Condition1",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Copy_sql_storage",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greater(activity('Copy_sql_storage').output.dataRead,0)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Delete_empty_file",
+							"type": "Delete",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "SQL_Data_Parquet_Storage_Sink",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_folder_1": {
+											"value": "@pipeline().parameters.p_table",
+											"type": "Expression"
+										},
+										"p_folder_2": {
+											"value": "@{pipeline().parameters.p_table}_data",
+											"type": "Expression"
+										},
+										"p_file": "@concat(pipeline().parameters.p_table,'-',variables('v_date'))"
+									}
+								},
+								"enableLogging": false,
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Copy_max_date_last_update",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "JsonSource",
+									"additionalColumns": [
+										{
+											"name": "last_update",
+											"value": {
+												"value": "@activity('max_date_lookup').output.value[0].latest_update",
+												"type": "Expression"
+											}
+										}
+									],
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "JsonReadSettings"
+									}
+								},
+								"sink": {
+									"type": "JsonSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "JsonWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "update_last_updaate_source",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_folder_1": {
+											"value": "@pipeline().parameters.p_table",
+											"type": "Expression"
+										},
+										"p_folder_2": {
+											"value": "@{pipeline().parameters.p_table}_monitor",
+											"type": "Expression"
+										},
+										"p_file": {
+											"value": "@{pipeline().parameters.p_table}_empty.json",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "update_last_update_sink",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_folder_1": {
+											"value": "@pipeline().parameters.p_table",
+											"type": "Expression"
+										},
+										"p_folder_2": {
+											"value": "@{pipeline().parameters.p_table}_monitor",
+											"type": "Expression"
+										},
+										"p_file": {
+											"value": "@{pipeline().parameters.p_table}_last_update.json",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
 			}
 		],
 		"parameters": {
