@@ -1,0 +1,1245 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "ASP-Project-Data-Factory"
+		},
+		"ADF_SQL_Database_Link_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'ADF_SQL_Database_Link'"
+		},
+		"ADF_Storage_Link_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'ADF_Storage_Link'"
+		},
+		"ADF_SQL_Database_Link_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "aspserver.database.windows.net"
+		},
+		"ADF_SQL_Database_Link_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "ASP-DataBase"
+		},
+		"ADF_SQL_Database_Link_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "aspadmin"
+		},
+		"ADF_Storage_Link_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://asprojectstorageaccount.dfs.core.windows.net/"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/ADF_SQL_Database_Link')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('ADF_SQL_Database_Link_properties_typeProperties_server')]",
+					"database": "[parameters('ADF_SQL_Database_Link_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('ADF_SQL_Database_Link_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('ADF_SQL_Database_Link_password')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ADF_Storage_Link')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ADF_Storage_Link_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('ADF_Storage_Link_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Last_update_lookup_source')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADF_Storage_Link",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"p_folder_1": {
+						"type": "string"
+					},
+					"p_folder_2": {
+						"type": "string"
+					},
+					"p_file": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().p_file",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@concat(dataset().p_folder_1,'/',dataset().p_folder_2)",
+							"type": "Expression"
+						},
+						"fileSystem": "bronze"
+					}
+				},
+				"schema": {
+					"type": "object",
+					"properties": {
+						"last_update": {
+							"type": "string"
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADF_Storage_Link')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Metadata')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADF_Storage_Link",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "bronze"
+					}
+				},
+				"schema": {
+					"type": "object",
+					"properties": {
+						"last_update": {
+							"type": "string"
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADF_Storage_Link')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/SQL_Data_Parquet_Storage_Sink')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADF_Storage_Link",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"p_folder_1": {
+						"type": "string"
+					},
+					"p_folder_2": {
+						"type": "string"
+					},
+					"p_file": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().p_file",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@concat(dataset().p_folder_1,'/',dataset().p_folder_2)",
+							"type": "Expression"
+						},
+						"fileSystem": "bronze"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADF_Storage_Link')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Sql_Data_Storage_Source')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADF_SQL_Database_Link",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADF_SQL_Database_Link')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Table_emptyjson_sink')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADF_Storage_Link",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"p_folder_1": {
+						"type": "string"
+					},
+					"p_folder_2": {
+						"type": "string"
+					},
+					"p_file": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().p_file",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@concat(dataset().p_folder_1,'/',dataset().p_folder_2)",
+							"type": "Expression"
+						},
+						"fileSystem": "bronze"
+					}
+				},
+				"schema": {
+					"type": "object",
+					"properties": {
+						"last_update": {
+							"type": "string"
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADF_Storage_Link')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Table_last_updatejson_sink')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADF_Storage_Link",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"p_folder_1": {
+						"type": "string"
+					},
+					"p_folder_2": {
+						"type": "string"
+					},
+					"p_file": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().p_file",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@concat(dataset().p_folder_1,'/',dataset().p_folder_2)",
+							"type": "Expression"
+						},
+						"fileSystem": "bronze"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADF_Storage_Link')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/max_date_table_source')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADF_SQL_Database_Link",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADF_SQL_Database_Link')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/monitor_emptyjson_source')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADF_Storage_Link",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "empty.json",
+						"folderPath": "monitor",
+						"fileSystem": "bronze"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADF_Storage_Link')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/monitor_last_updatejsonfile_source')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADF_Storage_Link",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "last_update.json",
+						"folderPath": "monitor",
+						"fileSystem": "bronze"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADF_Storage_Link')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/sql_database_lookup')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADF_SQL_Database_Link",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADF_SQL_Database_Link')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/update_last_updaate_source')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADF_Storage_Link",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"p_folder_1": {
+						"type": "string"
+					},
+					"p_folder_2": {
+						"type": "string"
+					},
+					"p_file": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().p_file",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@concat(dataset().p_folder_1,'/',dataset().p_folder_2)",
+							"type": "Expression"
+						},
+						"fileSystem": "bronze"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADF_Storage_Link')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/update_last_update_sink')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ADF_Storage_Link",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"p_folder_1": {
+						"type": "string"
+					},
+					"p_folder_2": {
+						"type": "string"
+					},
+					"p_file": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().p_file",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@concat(dataset().p_folder_1,'/',dataset().p_folder_2)",
+							"type": "Expression"
+						},
+						"fileSystem": "bronze"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ADF_Storage_Link')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Store-Data-Folder-Parquet-File')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Last_update_lookup",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "JsonSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "JsonReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "Last_update_lookup_source",
+								"type": "DatasetReference",
+								"parameters": {
+									"p_folder_1": {
+										"value": "@pipeline().parameters.p_table",
+										"type": "Expression"
+									},
+									"p_folder_2": {
+										"value": "@{pipeline().parameters.p_table}_monitor",
+										"type": "Expression"
+									},
+									"p_file": {
+										"value": "@{pipeline().parameters.p_table}_last_update.json",
+										"type": "Expression"
+									}
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "max_date_lookup",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT\n    MAX(@{pipeline().parameters.p_column}) as latest_update\nFROM @{pipeline().parameters.p_schema}.@{pipeline().parameters.p_table}",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "max_date_table_source",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "current_date",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "v_date",
+							"value": {
+								"value": "@utcNow()",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Copy_sql_storage",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Last_update_lookup",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "current_date",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "max_date_lookup",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT\n    *\nFROM @{pipeline().parameters.p_schema}.@{pipeline().parameters.p_table}\nWHERE @{pipeline().parameters.p_column} > '@{activity('Last_update_lookup').output.value[0].last_update}' AND @{pipeline().parameters.p_column} <= '@{activity('max_date_lookup').output.value[0].latest_update}' ",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "Sql_Data_Storage_Source",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "SQL_Data_Parquet_Storage_Sink",
+								"type": "DatasetReference",
+								"parameters": {
+									"p_folder_1": {
+										"value": "@pipeline().parameters.p_table",
+										"type": "Expression"
+									},
+									"p_folder_2": {
+										"value": "@{pipeline().parameters.p_table}_data",
+										"type": "Expression"
+									},
+									"p_file": {
+										"value": "@concat(pipeline().parameters.p_table,'-',variables('v_date'))",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "If Condition1",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "Copy_sql_storage",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@greater(activity('Copy_sql_storage').output.dataRead,0)",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "Delete_empty_file",
+									"type": "Delete",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "SQL_Data_Parquet_Storage_Sink",
+											"type": "DatasetReference",
+											"parameters": {
+												"p_folder_1": {
+													"value": "@pipeline().parameters.p_table",
+													"type": "Expression"
+												},
+												"p_folder_2": {
+													"value": "@{pipeline().parameters.p_table}_data",
+													"type": "Expression"
+												},
+												"p_file": "@concat(pipeline().parameters.p_table,'-',variables('v_date'))"
+											}
+										},
+										"enableLogging": false,
+										"storeSettings": {
+											"type": "AzureBlobFSReadSettings",
+											"recursive": true,
+											"enablePartitionDiscovery": false
+										}
+									}
+								}
+							],
+							"ifTrueActivities": [
+								{
+									"name": "Copy_max_date_last_update",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "JsonSource",
+											"additionalColumns": [
+												{
+													"name": "last_update",
+													"value": {
+														"value": "@activity('max_date_lookup').output.value[0].latest_update",
+														"type": "Expression"
+													}
+												}
+											],
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"enablePartitionDiscovery": false
+											},
+											"formatSettings": {
+												"type": "JsonReadSettings"
+											}
+										},
+										"sink": {
+											"type": "JsonSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "JsonWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "update_last_updaate_source",
+											"type": "DatasetReference",
+											"parameters": {
+												"p_folder_1": {
+													"value": "@pipeline().parameters.p_table",
+													"type": "Expression"
+												},
+												"p_folder_2": {
+													"value": "@{pipeline().parameters.p_table}_monitor",
+													"type": "Expression"
+												},
+												"p_file": {
+													"value": "@{pipeline().parameters.p_table}_empty.json",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "update_last_update_sink",
+											"type": "DatasetReference",
+											"parameters": {
+												"p_folder_1": {
+													"value": "@pipeline().parameters.p_table",
+													"type": "Expression"
+												},
+												"p_folder_2": {
+													"value": "@{pipeline().parameters.p_table}_monitor",
+													"type": "Expression"
+												},
+												"p_file": {
+													"value": "@{pipeline().parameters.p_table}_last_update.json",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"p_schema": {
+						"type": "string"
+					},
+					"p_table": {
+						"type": "string"
+					},
+					"p_column": {
+						"type": "string"
+					}
+				},
+				"variables": {
+					"v_date": {
+						"type": "String"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Last_update_lookup_source')]",
+				"[concat(variables('factoryId'), '/datasets/max_date_table_source')]",
+				"[concat(variables('factoryId'), '/datasets/Sql_Data_Storage_Source')]",
+				"[concat(variables('factoryId'), '/datasets/SQL_Data_Parquet_Storage_Sink')]",
+				"[concat(variables('factoryId'), '/datasets/update_last_updaate_source')]",
+				"[concat(variables('factoryId'), '/datasets/update_last_update_sink')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Create-Folder-JsonFile-Pipeline')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Monitor_lookup",
+						"description": "To get the schema and table name in the Database",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 2,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": "SELECT TABLE_SCHEMA, TABLE_NAME\nFROM INFORMATION_SCHEMA.TABLES\nWHERE TABLE_TYPE = 'BASE TABLE';",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "sql_database_lookup",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "For_Loop_Lookup_Value",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Monitor_lookup",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Monitor_lookup').output.value",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "If Condition1",
+									"type": "IfCondition",
+									"dependsOn": [
+										{
+											"activity": "Metadata_Storage",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@not(contains(string(activity('Metadata_Storage').output.childItems),item().TABLE_NAME))",
+											"type": "Expression"
+										},
+										"ifTrueActivities": [
+											{
+												"name": "Monitor-emptyjsonFile_TableFolder-File",
+												"type": "Copy",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 2,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "JsonSource",
+														"storeSettings": {
+															"type": "AzureBlobFSReadSettings",
+															"recursive": true,
+															"enablePartitionDiscovery": false
+														},
+														"formatSettings": {
+															"type": "JsonReadSettings"
+														}
+													},
+													"sink": {
+														"type": "JsonSink",
+														"storeSettings": {
+															"type": "AzureBlobFSWriteSettings"
+														},
+														"formatSettings": {
+															"type": "JsonWriteSettings"
+														}
+													},
+													"enableStaging": false
+												},
+												"inputs": [
+													{
+														"referenceName": "monitor_emptyjson_source",
+														"type": "DatasetReference",
+														"parameters": {}
+													}
+												],
+												"outputs": [
+													{
+														"referenceName": "Table_emptyjson_sink",
+														"type": "DatasetReference",
+														"parameters": {
+															"p_folder_1": {
+																"value": "@item().TABLE_NAME",
+																"type": "Expression"
+															},
+															"p_folder_2": {
+																"value": "@{item().TABLE_NAME}_monitor",
+																"type": "Expression"
+															},
+															"p_file": {
+																"value": "@{item().TABLE_NAME}_empty.json",
+																"type": "Expression"
+															}
+														}
+													}
+												]
+											},
+											{
+												"name": "Monitor-last_updatejsonFile_TableFolder-File_copy1",
+												"type": "Copy",
+												"dependsOn": [
+													{
+														"activity": "Monitor-emptyjsonFile_TableFolder-File",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 2,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "JsonSource",
+														"storeSettings": {
+															"type": "AzureBlobFSReadSettings",
+															"recursive": true,
+															"enablePartitionDiscovery": false
+														},
+														"formatSettings": {
+															"type": "JsonReadSettings"
+														}
+													},
+													"sink": {
+														"type": "JsonSink",
+														"storeSettings": {
+															"type": "AzureBlobFSWriteSettings"
+														},
+														"formatSettings": {
+															"type": "JsonWriteSettings"
+														}
+													},
+													"enableStaging": false
+												},
+												"inputs": [
+													{
+														"referenceName": "monitor_last_updatejsonfile_source",
+														"type": "DatasetReference",
+														"parameters": {}
+													}
+												],
+												"outputs": [
+													{
+														"referenceName": "Table_last_updatejson_sink",
+														"type": "DatasetReference",
+														"parameters": {
+															"p_folder_1": {
+																"value": "@item().TABLE_NAME",
+																"type": "Expression"
+															},
+															"p_folder_2": {
+																"value": "@{item().TABLE_NAME}_monitor",
+																"type": "Expression"
+															},
+															"p_file": {
+																"value": "@{item().TABLE_NAME}_last_update.json",
+																"type": "Expression"
+															}
+														}
+													}
+												]
+											}
+										]
+									}
+								},
+								{
+									"name": "Metadata_Storage",
+									"type": "GetMetadata",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "Metadata",
+											"type": "DatasetReference",
+											"parameters": {}
+										},
+										"fieldList": [
+											"childItems"
+										],
+										"storeSettings": {
+											"type": "AzureBlobFSReadSettings",
+											"recursive": true,
+											"enablePartitionDiscovery": false
+										},
+										"formatSettings": {
+											"type": "JsonReadSettings"
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "For_loop_lookup_value_store",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "For_Loop_Lookup_Value",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Monitor_lookup').output.value",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "Execute Pipeline_to_store_data",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "Store-Data-Folder-Parquet-File",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"p_schema": {
+												"value": "@item().TABLE_SCHEMA",
+												"type": "Expression"
+											},
+											"p_table": {
+												"value": "@item().TABLE_NAME",
+												"type": "Expression"
+											},
+											"p_column": {
+												"value": "@if(\n    equals(item().TABLE_NAME, 'Dates'),\n    'date',\n    if(\n        equals(item().TABLE_NAME, 'Stream'),\n        'stream_timestamp',\n        'updated_at'\n    )\n)",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "Alerts_1",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Monitor_lookup",
+								"dependencyConditions": [
+									"Skipped",
+									"Failed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "POST",
+							"headers": {},
+							"url": "https://prod-06.centralindia.logic.azure.com:443/workflows/b1ce866a4fde401b9c13e8c851d96bbb/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=m-oQ1LKzzeD0_C3xk8Wh_JhC3NtPoqsCgLXtKC6FcbE",
+							"body": {
+								"value": "{\n    \"pipeline_name\":\"@{pipeline().Pipeline}\",\n    \"pipeline_run_id\":\"@{pipeline().RunId}\",\n    \"pipeline_status\":\"Fail\"\n}",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Alerts_2",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "For_Loop_Lookup_Value",
+								"dependencyConditions": [
+									"Skipped",
+									"Failed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "POST",
+							"headers": {},
+							"url": "https://prod-06.centralindia.logic.azure.com:443/workflows/b1ce866a4fde401b9c13e8c851d96bbb/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=m-oQ1LKzzeD0_C3xk8Wh_JhC3NtPoqsCgLXtKC6FcbE",
+							"body": {
+								"value": "{\n    \"pipeline_name\":\"@{pipeline().Pipeline}\",\n    \"pipeline_run_id\":\"@{pipeline().RunId}\",\n    \"pipeline_status\":\"Fail\"\n}",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Alerts_3",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "For_loop_lookup_value_store",
+								"dependencyConditions": [
+									"Skipped",
+									"Failed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "POST",
+							"headers": {},
+							"url": "https://prod-06.centralindia.logic.azure.com:443/workflows/b1ce866a4fde401b9c13e8c851d96bbb/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=m-oQ1LKzzeD0_C3xk8Wh_JhC3NtPoqsCgLXtKC6FcbE",
+							"body": {
+								"value": "{\n    \"pipeline_name\":\"@{pipeline().Pipeline}\",\n    \"pipeline_run_id\":\"@{pipeline().RunId}\",\n    \"pipeline_status\":\"Fail\"\n}",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"v_current_date": {
+						"type": "String"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/sql_database_lookup')]",
+				"[concat(variables('factoryId'), '/datasets/Metadata')]",
+				"[concat(variables('factoryId'), '/pipelines/Store-Data-Folder-Parquet-File')]",
+				"[concat(variables('factoryId'), '/datasets/monitor_emptyjson_source')]",
+				"[concat(variables('factoryId'), '/datasets/Table_emptyjson_sink')]",
+				"[concat(variables('factoryId'), '/datasets/monitor_last_updatejsonfile_source')]",
+				"[concat(variables('factoryId'), '/datasets/Table_last_updatejson_sink')]"
+			]
+		}
+	]
+}

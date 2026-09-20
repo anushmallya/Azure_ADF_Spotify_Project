@@ -1,0 +1,27 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "ASP-Project-Data-Factory"
+		},
+		"ADF_SQL_Database_Link_password": {
+			"value": ""
+		},
+		"ADF_Storage_Link_accountKey": {
+			"value": ""
+		},
+		"ADF_SQL_Database_Link_properties_typeProperties_server": {
+			"value": "aspserver.database.windows.net"
+		},
+		"ADF_SQL_Database_Link_properties_typeProperties_database": {
+			"value": "ASP-DataBase"
+		},
+		"ADF_SQL_Database_Link_properties_typeProperties_userName": {
+			"value": "aspadmin"
+		},
+		"ADF_Storage_Link_properties_typeProperties_url": {
+			"value": "https://asprojectstorageaccount.dfs.core.windows.net/"
+		}
+	}
+}
