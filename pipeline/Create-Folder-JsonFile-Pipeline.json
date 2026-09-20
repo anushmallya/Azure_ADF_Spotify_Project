@@ -292,7 +292,8 @@
 					{
 						"activity": "Monitor_lookup",
 						"dependencyConditions": [
-							"Succeeded"
+							"Skipped",
+							"Failed"
 						]
 					}
 				],
@@ -308,7 +309,7 @@
 					"method": "POST",
 					"url": "https://prod-06.centralindia.logic.azure.com:443/workflows/b1ce866a4fde401b9c13e8c851d96bbb/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=m-oQ1LKzzeD0_C3xk8Wh_JhC3NtPoqsCgLXtKC6FcbE",
 					"body": {
-						"value": "{\n    \"pipeline_name\":\"@{pipeline().Pipeline}\",\n    \"pipeline_run_id\":\"@{pipeline().RunId}\",\n    \"pipeline_status\":\"Sucess\"\n}",
+						"value": "{\n    \"pipeline_name\":\"@{pipeline().Pipeline}\",\n    \"pipeline_run_id\":\"@{pipeline().RunId}\",\n    \"pipeline_status\":\"Fail\"\n}",
 						"type": "Expression"
 					}
 				}
@@ -320,7 +321,8 @@
 					{
 						"activity": "For_Loop_Lookup_Value",
 						"dependencyConditions": [
-							"Succeeded"
+							"Skipped",
+							"Failed"
 						]
 					}
 				],
@@ -336,7 +338,7 @@
 					"method": "POST",
 					"url": "https://prod-06.centralindia.logic.azure.com:443/workflows/b1ce866a4fde401b9c13e8c851d96bbb/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=m-oQ1LKzzeD0_C3xk8Wh_JhC3NtPoqsCgLXtKC6FcbE",
 					"body": {
-						"value": "{\n    \"pipeline_name\":\"@{pipeline().Pipeline}\",\n    \"pipeline_run_id\":\"@{pipeline().RunId}\",\n    \"pipeline_status\":\"Sucess\"\n}",
+						"value": "{\n    \"pipeline_name\":\"@{pipeline().Pipeline}\",\n    \"pipeline_run_id\":\"@{pipeline().RunId}\",\n    \"pipeline_status\":\"Fail\"\n}",
 						"type": "Expression"
 					}
 				}
@@ -348,7 +350,8 @@
 					{
 						"activity": "For_loop_lookup_value_store",
 						"dependencyConditions": [
-							"Succeeded"
+							"Skipped",
+							"Failed"
 						]
 					}
 				],
@@ -364,7 +367,7 @@
 					"method": "POST",
 					"url": "https://prod-06.centralindia.logic.azure.com:443/workflows/b1ce866a4fde401b9c13e8c851d96bbb/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=m-oQ1LKzzeD0_C3xk8Wh_JhC3NtPoqsCgLXtKC6FcbE",
 					"body": {
-						"value": "{\n    \"pipeline_name\":\"@{pipeline().Pipeline}\",\n    \"pipeline_run_id\":\"@{pipeline().RunId}\",\n    \"pipeline_status\":\"Sucess\"\n}",
+						"value": "{\n    \"pipeline_name\":\"@{pipeline().Pipeline}\",\n    \"pipeline_run_id\":\"@{pipeline().RunId}\",\n    \"pipeline_status\":\"Fail\"\n}",
 						"type": "Expression"
 					}
 				}
