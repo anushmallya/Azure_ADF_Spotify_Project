@@ -16,6 +16,7 @@ Azure Data Factory
 ADLS Gen2 - Bronze Layer
         ↓
      Parquet
+```
 
 ## 🛠️ Resources & Technologies Used
 
